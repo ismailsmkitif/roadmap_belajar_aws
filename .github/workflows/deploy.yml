@@ -1,0 +1,57 @@
+name: Serverless CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-and-deploy:
+    name: Pytest & SAM Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r phase4-serverless-cicd/requirements.txt
+
+      - name: Run Unit Tests with Pytest & Moto
+        run: |
+          cd phase4-serverless-cicd
+          pytest tests/ -v
+
+      - name: Setup AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Configure AWS Credentials (Learner Lab)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: SAM Build
+        run: |
+          cd phase4-serverless-cicd
+          sam build --template template.yaml
+
+      - name: SAM Deploy
+        run: |
+          cd phase4-serverless-cicd
+          sam deploy \
+            --stack-name todo-serverless-stack \
+            --resolve-s3 \
+            --capabilities CAPABILITY_IAM \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset

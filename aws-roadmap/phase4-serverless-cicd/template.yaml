@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Fase 4 Serverless REST API SAM Template (AWS Academy Learner Lab Compatible)
+
+Parameters:
+  LabRoleArn:
+    Type: String
+    Default: arn:aws:iam::ACCOUNT_ID:role/LabRole
+    Description: ARN dari LabRole bawaan AWS Academy Learner Lab (DILARANG membuat IAM role baru)
+
+Resources:
+  # 1. DynamoDB Table On-Demand
+  TodosTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: todos-sam
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+
+  # 2. HTTP API Gateway v2
+  TodoHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - OPTIONS
+        AllowHeaders:
+          - Content-Type
+          - Authorization
+        AllowOrigins:
+          - '*'
+
+  # 3. Lambda Function Python 3.12
+  TodoFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: todo-api-function-sam
+      CodeUri: src/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      MemorySize: 256
+      Timeout: 10
+      Role: !Ref LabRoleArn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TodosTable
+      Events:
+        CreateTodo:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TodoHttpApi
+            Path: /todos
+            Method: post
+        ListTodos:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TodoHttpApi
+            Path: /todos
+            Method: get
+        GetTodo:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TodoHttpApi
+            Path: /todos/{id}
+            Method: get
+        UpdateTodo:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TodoHttpApi
+            Path: /todos/{id}
+            Method: put
+        DeleteTodo:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref TodoHttpApi
+            Path: /todos/{id}
+            Method: delete
+
+Outputs:
+  ApiUrl:
+    Description: Endpoint URL dari HTTP API
+    Value: !Sub "https://${TodoHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  DynamoDBTableName:
+    Description: Nama Tabel DynamoDB
+    Value: !Ref TodosTable
