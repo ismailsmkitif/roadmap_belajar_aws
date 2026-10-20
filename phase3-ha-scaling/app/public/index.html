@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS High Availability & Auto Scaling Demo &bull; ALB to ASG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient-glow glow-top"></div>
+
+  <header class="header">
+    <div class="container header-flex">
+      <div>
+        <div class="badge-tag">AWS Fase 3 &bull; High Availability & Elasticity</div>
+        <h1>Application Load Balancer & Auto Scaling</h1>
+      </div>
+      <div class="header-status">
+        <span class="pulse-indicator"></span>
+        <span>Stateless Web Tier Active</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    <!-- Hero ALB Dispatch Banner -->
+    <section class="card dispatch-banner">
+      <div class="dispatch-header">
+        <span class="sub-label">Node Pemroses Permintaan Ini:</span>
+        <button class="btn btn-sm btn-outline" onclick="fetchNodeInfo()">Refresh Request &larr;&rarr;</button>
+      </div>
+      <div class="dispatch-metrics">
+        <div class="metric-block">
+          <span class="metric-label">EC2 Instance ID</span>
+          <span class="metric-val highlight-val" id="disp-instance-id">Memuat...</span>
+        </div>
+        <div class="metric-block">
+          <span class="metric-label">Availability Zone</span>
+          <span class="metric-val az-tag" id="disp-az">Memeriksa AZ...</span>
+        </div>
+        <div class="metric-block">
+          <span class="metric-label">Private IPv4</span>
+          <span class="metric-val" id="disp-private-ip">-</span>
+        </div>
+      </div>
+      <p class="dispatch-hint">
+        <em>Tip:</em> Buka URL DNS Load Balancer di tab baru atau tekan <strong>F5 (Refresh)</strong> berkali-kali. Anda akan melihat <strong>Instance ID</strong> dan <strong>Availability Zone</strong> bergantian antara `us-east-1a` dan `us-east-1b`, membuktikan ALB membagi beban secara merata (*Round-Robin*).
+      </p>
+    </section>
+
+    <!-- 2 Column Layout: Health & Stress Test -->
+    <div class="grid-2">
+      <!-- Target Group Health & DB Card -->
+      <section class="card">
+        <div class="card-head">
+          <h3>Target Group & DB Status</h3>
+          <span class="badge-status status-green" id="health-badge">ELB Healthy</span>
+        </div>
+        <div class="kv-list">
+          <div class="kv-row">
+            <span class="kv-key">ALB Health Check Path:</span>
+            <span class="kv-val"><code>/health</code> (HTTP 200 OK)</span>
+          </div>
+          <div class="kv-row">
+            <span class="kv-key">Koneksi RDS MySQL:</span>
+            <span class="kv-val" id="db-conn-text">Memeriksa...</span>
+          </div>
+          <div class="kv-row">
+            <span class="kv-key">Sifat Aplikasi:</span>
+            <span class="kv-val text-success">Stateless (No Local Session)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- CPU Stress Test Trigger (Uji Auto Scaling) -->
+      <section class="card">
+        <div class="card-head">
+          <h3>Simulasi Beban CPU (Auto Scaling)</h3>
+          <span class="badge-status" id="stress-badge">Idle</span>
+        </div>
+        <p class="card-desc">
+          Trigger loop komputasi CPU selama 15 detik pada instance ini untuk menguji <strong>Target Tracking Scaling Policy (CPU 50%)</strong>.
+        </p>
+        <div class="stress-actions">
+          <button class="btn btn-warning" id="btn-stress" onclick="triggerStress()">Spike CPU Beban 15s</button>
+          <span class="stress-timer" id="stress-status-text">Beban normal (&lt;5% CPU)</span>
+        </div>
+      </section>
+    </div>
+
+    <!-- Data Storage Test (Stateless Verification) -->
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <h3>Verifikasi Stateful di Database Sentral (RDS)</h3>
+          <p class="card-desc">Setiap instance dalam Auto Scaling Group membaca dan menulis ke satu database yang sama.</p>
+        </div>
+        <button class="btn btn-sm btn-outline" onclick="loadNotes()">Refresh Tabel</button>
+      </div>
+
+      <form id="note-form" onsubmit="submitNote(event)" class="note-form-grid">
+        <input type="text" id="note-title" placeholder="Judul data / tes..." required class="input-text">
+        <input type="text" id="note-content" placeholder="Deskripsi data..." class="input-text">
+        <button type="submit" class="btn btn-primary" id="btn-submit">Kirim Data</button>
+      </form>
+
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Judul Catatan</th>
+              <th>Diproses oleh Instance</th>
+              <th>Availability Zone</th>
+              <th>Waktu</th>
+            </tr>
+          </thead>
+          <tbody id="notes-table-body">
+            <tr>
+              <td colspan="5" class="text-center">Memuat catatan dari RDS...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container text-center">
+      <p>&copy; 2026 AWS Academy Learner Lab &bull; Fase 3 High Availability Architecture</p>
+    </div>
+  </footer>
+
+  <script>
+    async function fetchNodeInfo() {
+      try {
+        const res = await fetch('/api/node-info');
+        const data = await res.json();
+        
+        document.getElementById('disp-instance-id').textContent = data.instance.instanceId;
+        
+        const azEl = document.getElementById('disp-az');
+        azEl.textContent = data.instance.availabilityZone;
+        if (data.instance.availabilityZone.includes('1a')) {
+          azEl.className = 'metric-val az-tag az-a';
+        } else if (data.instance.availabilityZone.includes('1b')) {
+          azEl.className = 'metric-val az-tag az-b';
+        }
+
+        document.getElementById('disp-private-ip').textContent = data.instance.privateIp;
+
+        const dbText = document.getElementById('db-conn-text');
+        if (data.database.connected) {
+          dbText.innerHTML = '<span class="text-success">Terkoneksi (RDS Sentral)</span>';
+        } else {
+          dbText.innerHTML = '<span class="text-danger">Belum Terhubung</span>';
+        }
+      } catch (err) {
+        console.error('Gagal mengambil metadata:', err);
+      }
+    }
+
+    async function loadNotes() {
+      const tbody = document.getElementById('notes-table-body');
+      try {
+        const res = await fetch('/api/notes');
+        if (!res.ok) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Database belum terhubung. Konfigurasikan .env di RDS.</td></tr>';
+          return;
+        }
+        const notes = await res.json();
+        if (notes.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Belum ada data di database. Tambahkan data di atas!</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = notes.map(n => `
+          <tr>
+            <td>#${n.id}</td>
+            <td><strong>${escapeHtml(n.title)}</strong><br><small class="text-muted">${escapeHtml(n.content || '')}</small></td>
+            <td><code>${escapeHtml(n.handled_by_instance || '-')}</code></td>
+            <td><span class="az-pill">${escapeHtml(n.handled_by_az || '-')}</span></td>
+            <td>${new Date(n.created_at).toLocaleTimeString()}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error: ${err.message}</td></tr>`;
+      }
+    }
+
+    async function submitNote(e) {
+      e.preventDefault();
+      const title = document.getElementById('note-title').value.trim();
+      const content = document.getElementById('note-content').value.trim();
+      if (!title) return;
+
+      const btn = document.getElementById('btn-submit');
+      btn.disabled = true;
+      btn.textContent = 'Menyimpan...';
+
+      try {
+        const res = await fetch('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, content })
+        });
+        if (res.ok) {
+          document.getElementById('note-title').value = '';
+          document.getElementById('note-content').value = '';
+          await loadNotes();
+        } else {
+          alert('Gagal simpan ke DB. Pastikan RDS aktif.');
+        }
+      } catch (err) {
+        alert('Gagal: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Kirim Data';
+      }
+    }
+
+    async function triggerStress() {
+      const btn = document.getElementById('btn-stress');
+      const badge = document.getElementById('stress-badge');
+      const statusText = document.getElementById('stress-status-text');
+
+      btn.disabled = true;
+      badge.textContent = 'HIGH CPU (100%)';
+      badge.className = 'badge-status status-danger';
+      statusText.textContent = 'Sedang menjalankan spike CPU 15s...';
+
+      try {
+        await fetch('/api/stress?duration=15000');
+        statusText.textContent = 'Spike selesai. Pantau di CloudWatch EC2 CPU Utilization.';
+      } catch (err) {
+        statusText.textContent = 'Request spike dikirim.';
+      } finally {
+        btn.disabled = false;
+        badge.textContent = 'Idle';
+        badge.className = 'badge-status';
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    fetchNodeInfo();
+    loadNotes();
+  </script>
+</body>
+</html>

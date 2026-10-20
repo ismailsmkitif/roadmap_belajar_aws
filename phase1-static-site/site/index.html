@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Portfolio Cloud & DevOps Engineer - Ismail. Showcase implementasi infrastruktur AWS, High Availability, dan Serverless.">
+  <title>Ismail | Cloud & DevOps Portfolio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Background Glow FX -->
+  <div class="glow-bg glow-1"></div>
+  <div class="glow-bg glow-2"></div>
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="#hero" class="nav-brand" id="brand-link">
+        <span class="brand-badge">AWS</span>
+        <span class="brand-text">CloudFolio</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#about" class="nav-link">Tentang</a></li>
+        <li><a href="#projects" class="nav-link">Projects</a></li>
+        <li><a href="#skills" class="nav-link">Keahlian</a></li>
+        <li><a href="#contact" class="nav-cta" id="nav-cta-btn">Kontak</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero-section" id="hero">
+    <div class="hero-container">
+      <div class="badge-pill">
+        <span class="status-dot"></span>
+        AWS Academy Learner Lab Project &bull; Region us-east-1
+      </div>
+      <h1 class="hero-title">
+        Membangun Solusi Cloud yang <span class="gradient-text">Aman, Andal & Skalabel</span>
+      </h1>
+      <p class="hero-subtitle">
+        Halo, saya <strong>Ismail</strong>. Antusias Cloud & DevOps yang berfokus pada arsitektur AWS Best Practices, mulai dari Static Website Hosting, Multi-AZ High Availability, hingga Serverless & CI/CD.
+      </p>
+      <div class="hero-actions">
+        <a href="#projects" class="btn btn-primary" id="btn-explore-projects">Jelajahi Project AWS</a>
+        <a href="#architecture" class="btn btn-secondary" id="btn-view-arch">Arsitektur Website Ini</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-card">
+          <span class="stat-number">4</span>
+          <span class="stat-label">Milestone Proyek</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">100%</span>
+          <span class="stat-label">AWS Native Practice</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-number">0ms</span>
+          <span class="stat-label">Public S3 Exposure (OAC)</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Live Architecture Callout -->
+  <section class="section-container" id="architecture">
+    <div class="card glass-card architecture-banner">
+      <div class="card-tag">Arsitektur Saat Ini (Fase 1)</div>
+      <h2>Bagaimana Website Ini Dihosting?</h2>
+      <p class="section-desc">
+        Website portofolio ini berjalan di arsitektur <em>serverless</em> yang aman dan hemat biaya menggunakan layanan AWS:
+      </p>
+      <div class="arch-flow">
+        <div class="arch-node">
+          <span class="node-icon">&#127760;</span>
+          <span class="node-title">Pengunjung</span>
+          <span class="node-sub">HTTPS Client</span>
+        </div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node active-node">
+          <span class="node-icon">&#9889;</span>
+          <span class="node-title">Amazon CloudFront</span>
+          <span class="node-sub">CDN & OAC Edge</span>
+        </div>
+        <div class="arch-arrow">&rarr;</div>
+        <div class="arch-node">
+          <span class="node-icon">&#128274;</span>
+          <span class="node-title">Amazon S3 (Private)</span>
+          <span class="node-sub">Origin Bucket</span>
+        </div>
+      </div>
+      <div class="arch-features">
+        <div class="feature-item">
+          <strong>Keamanan:</strong> S3 Bucket sepenuhnya privat. Akses hanya diizinkan melalui CloudFront Origin Access Control (OAC).
+        </div>
+        <div class="feature-item">
+          <strong>Performa:</strong> Aset di-cache di ratusan Edge Location CloudFront di seluruh dunia untuk latensi ultra rendah.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Projects Section -->
+  <section class="section-container" id="projects">
+    <div class="section-header">
+      <span class="sub-heading">Roadmap Pembelajaran</span>
+      <h2 class="section-title">4 Fase Proyek AWS</h2>
+      <p class="section-desc">Rangkaian proyek hands-on yang dibangun di AWS Academy Learner Lab.</p>
+    </div>
+
+    <div class="project-grid">
+      <!-- Project 1 -->
+      <article class="project-card active-project" id="project-card-1">
+        <div class="project-badge current">Sedang Berjalan (Fase 1)</div>
+        <h3 class="project-title">Static Website Portfolio & CDN</h3>
+        <p class="project-desc">
+          Hosting portfolio modern dengan S3, CloudFront HTTPS, Origin Access Control (OAC), cache invalidation, dan Block Public Access.
+        </p>
+        <div class="tech-tags">
+          <span class="tag">Amazon S3</span>
+          <span class="tag">CloudFront</span>
+          <span class="tag">OAC</span>
+          <span class="tag">HTTPS</span>
+        </div>
+      </article>
+
+      <!-- Project 2 -->
+      <article class="project-card" id="project-card-2">
+        <div class="project-badge">Fase 2</div>
+        <h3 class="project-title">Three-Tier Web Application</h3>
+        <p class="project-desc">
+          Pemisahan Presentation, Application, dan Database Layer di dalam custom VPC dengan Public & Private Subnet serta RDS MySQL.
+        </p>
+        <div class="tech-tags">
+          <span class="tag">VPC</span>
+          <span class="tag">EC2</span>
+          <span class="tag">RDS db.t3.micro</span>
+          <span class="tag">NAT Gateway</span>
+        </div>
+      </article>
+
+      <!-- Project 3 -->
+      <article class="project-card" id="project-card-3">
+        <div class="project-badge">Fase 3</div>
+        <h3 class="project-title">High Availability & Auto Scaling</h3>
+        <p class="project-desc">
+          Infrastruktur tahan bencana dengan Application Load Balancer (ALB), Auto Scaling Group lintas Multi-AZ, dan CloudWatch Alarms.
+        </p>
+        <div class="tech-tags">
+          <span class="tag">ALB</span>
+          <span class="tag">Auto Scaling</span>
+          <span class="tag">Multi-AZ</span>
+          <span class="tag">CloudWatch</span>
+        </div>
+      </article>
+
+      <!-- Project 4 -->
+      <article class="project-card" id="project-card-4">
+        <div class="project-badge">Fase 4</div>
+        <h3 class="project-title">Serverless Architecture & CI/CD</h3>
+        <p class="project-desc">
+          Backend serverless berbasis event-driven menggunakan API Gateway, Lambda, DynamoDB, otomatisasi IaC (SAM), dan GitHub Actions.
+        </p>
+        <div class="tech-tags">
+          <span class="tag">AWS Lambda</span>
+          <span class="tag">API Gateway</span>
+          <span class="tag">DynamoDB</span>
+          <span class="tag">GitHub Actions</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Skills Section -->
+  <section class="section-container" id="skills">
+    <div class="section-header">
+      <span class="sub-heading">Kompetensi Cloud</span>
+      <h2 class="section-title">Teknologi & Layanan AWS</h2>
+    </div>
+    <div class="skills-grid">
+      <div class="skill-category">
+        <h4>Compute & Hosting</h4>
+        <div class="skill-badges">
+          <span>Amazon EC2</span>
+          <span>AWS Lambda</span>
+          <span>S3 Static Hosting</span>
+          <span>Auto Scaling</span>
+        </div>
+      </div>
+      <div class="skill-category">
+        <h4>Networking & Security</h4>
+        <div class="skill-badges">
+          <span>Amazon VPC</span>
+          <span>CloudFront CDN</span>
+          <span>IAM & LabRole</span>
+          <span>Security Groups</span>
+        </div>
+      </div>
+      <div class="skill-category">
+        <h4>Database & Storage</h4>
+        <div class="skill-badges">
+          <span>Amazon S3</span>
+          <span>Amazon RDS (MySQL)</span>
+          <span>Amazon DynamoDB</span>
+          <span>EBS Volumes</span>
+        </div>
+      </div>
+      <div class="skill-category">
+        <h4>DevOps & IaC</h4>
+        <div class="skill-badges">
+          <span>AWS SAM</span>
+          <span>CloudFormation</span>
+          <span>GitHub Actions</span>
+          <span>CloudWatch</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact / Footer -->
+  <footer class="footer" id="contact">
+    <div class="footer-container">
+      <div class="footer-cta">
+        <h2>Siap Berdiskusi Seputar Solusi Cloud?</h2>
+        <p>Proyek ini dikembangkan dalam rangka penguasaan mendalam arsitektur AWS Academy Learner Lab.</p>
+        <a href="mailto:ismail@example.com" class="btn btn-primary" id="btn-email-contact">Hubungi via Email</a>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Ismail. Ditenagai oleh AWS S3 & CloudFront Edge Network.</p>
+        <p class="footer-note">Learner Lab Environment &bull; Region: us-east-1</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AWS 3-Tier Web App &bull; EC2 to RDS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="ambient-glow glow-top"></div>
+
+  <header class="header">
+    <div class="container header-content">
+      <div class="logo">
+        <span class="badge-tag">AWS Architecture</span>
+        <h1>Three-Tier Scalable Application</h1>
+      </div>
+      <div class="env-pill">
+        <span class="pulse-dot"></span>
+        <span>Public Subnet &bull; EC2 Web Tier</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    <!-- Architecture Diagram Bar -->
+    <section class="card arch-strip">
+      <div class="tier-box">
+        <span class="tier-label">Tier 1: Client / Web</span>
+        <span class="tier-value">Internet Gateway (IGW)</span>
+      </div>
+      <div class="tier-arrow">&rarr;</div>
+      <div class="tier-box active-tier">
+        <span class="tier-label">Tier 2: Compute (App)</span>
+        <span class="tier-value" id="disp-hostname">EC2 Instance (Loading...)</span>
+      </div>
+      <div class="tier-arrow">&rarr;</div>
+      <div class="tier-box db-tier" id="db-tier-box">
+        <span class="tier-label">Tier 3: Database (Private)</span>
+        <span class="tier-value" id="disp-db-status">RDS MySQL (Checking...)</span>
+      </div>
+    </section>
+
+    <!-- Status Cards Grid -->
+    <div class="grid-2">
+      <!-- EC2 Instance Info Card -->
+      <section class="card">
+        <div class="card-header">
+          <h3>EC2 Compute Info (App Tier)</h3>
+          <span class="chip-sm">Subnet Publik</span>
+        </div>
+        <div class="info-list">
+          <div class="info-item">
+            <span class="info-key">Server Hostname:</span>
+            <span class="info-val" id="server-hostname">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Platform OS:</span>
+            <span class="info-val" id="server-platform">Amazon Linux 2023</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Server Uptime:</span>
+            <span class="info-val" id="server-uptime">-</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- RDS MySQL Status Card -->
+      <section class="card" id="db-card">
+        <div class="card-header">
+          <h3>RDS MySQL Info (Data Tier)</h3>
+          <button class="btn btn-sm" id="btn-reconnect" onclick="reconnectDB()">Cek Koneksi Ulang</button>
+        </div>
+        <div class="info-list">
+          <div class="info-item">
+            <span class="info-key">Koneksi Database:</span>
+            <span class="info-val" id="db-status-badge">Memeriksa...</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">RDS Endpoint:</span>
+            <span class="info-val text-truncate" id="db-host">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-key">Nama Database:</span>
+            <span class="info-val" id="db-name">-</span>
+          </div>
+          <div class="info-item" id="db-error-row" style="display: none;">
+            <span class="info-key" style="color: #f87171;">Pesan Error:</span>
+            <span class="info-val" id="db-error-msg" style="color: #fca5a5;">-</span>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Interactive Data Entry & Display (Tier 3 Test) -->
+    <section class="card data-section">
+      <div class="card-header">
+        <div>
+          <h3>Uji Tulis & Baca Database RDS</h3>
+          <p class="subtext">Data yang Anda masukkan di bawah ini disimpan langsung ke tabel MySQL di Subnet Privat.</p>
+        </div>
+        <button class="btn btn-secondary" onclick="loadNotes()">Refresh Data</button>
+      </div>
+
+      <form id="note-form" onsubmit="submitNote(event)" class="note-form">
+        <div class="form-group">
+          <input type="text" id="note-title" placeholder="Judul entri (contoh: Tes Koneksi Multi-AZ)" required class="input-field">
+        </div>
+        <div class="form-group">
+          <textarea id="note-content" placeholder="Deskripsi atau catatan testing..." rows="2" class="input-field"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" id="btn-save-note">Simpan ke RDS MySQL</button>
+      </form>
+
+      <div class="notes-container">
+        <h4>Data Tersimpan di RDS:</h4>
+        <div id="notes-list" class="notes-grid">
+          <p class="empty-state">Belum ada catatan atau database belum terhubung.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 AWS Academy Learner Lab &bull; Fase 2 Three-Tier Architecture</p>
+  </footer>
+
+  <script>
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        
+        // Populate EC2 Info
+        document.getElementById('server-hostname').textContent = data.server.hostname;
+        document.getElementById('disp-hostname').textContent = data.server.hostname;
+        document.getElementById('server-platform').textContent = data.server.platform;
+        document.getElementById('server-uptime').textContent = Math.floor(data.server.uptimeSeconds / 60) + ' menit';
+
+        // Populate DB Info
+        const dbBadge = document.getElementById('db-status-badge');
+        const dispDb = document.getElementById('disp-db-status');
+        const dbTierBox = document.getElementById('db-tier-box');
+        const errRow = document.getElementById('db-error-row');
+
+        if (data.database.connected) {
+          dbBadge.innerHTML = '<span class="status-pill status-ok">Terhubung (Port 3306)</span>';
+          dispDb.textContent = 'Connected (Subnet Privat)';
+          dbTierBox.classList.add('connected-tier');
+          document.getElementById('db-host').textContent = data.database.host;
+          document.getElementById('db-name').textContent = data.database.database;
+          errRow.style.display = 'none';
+        } else {
+          dbBadge.innerHTML = '<span class="status-pill status-bad">Terputus / Belum Dikonfigurasi</span>';
+          dispDb.textContent = 'Disconnected';
+          dbTierBox.classList.remove('connected-tier');
+          document.getElementById('db-host').textContent = data.database.host || 'Belum diisi di .env';
+          document.getElementById('db-name').textContent = data.database.database || '-';
+          errRow.style.display = 'flex';
+          document.getElementById('db-error-msg').textContent = data.database.error || 'Unknown error';
+        }
+      } catch (err) {
+        console.error('Gagal mengambil status:', err);
+      }
+    }
+
+    async function loadNotes() {
+      const container = document.getElementById('notes-list');
+      try {
+        const res = await fetch('/api/notes');
+        if (!res.ok) {
+          container.innerHTML = '<p class="empty-state">Database belum terkoneksi. Silakan periksa konfigurasi .env di server.</p>';
+          return;
+        }
+        const notes = await res.json();
+        if (notes.length === 0) {
+          container.innerHTML = '<p class="empty-state">Belum ada entri catatan. Buat entri baru menggunakan form di atas!</p>';
+          return;
+        }
+        container.innerHTML = notes.map(n => `
+          <div class="note-card">
+            <div class="note-header">
+              <h5>${escapeHtml(n.title)}</h5>
+              <span class="note-date">#${n.id} &bull; ${new Date(n.created_at).toLocaleTimeString()}</span>
+            </div>
+            <p class="note-body">${escapeHtml(n.content || '(Tanpa detail)')}</p>
+          </div>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = '<p class="empty-state">Gagal memuat catatan: ' + err.message + '</p>';
+      }
+    }
+
+    async function submitNote(e) {
+      e.preventDefault();
+      const title = document.getElementById('note-title').value.trim();
+      const content = document.getElementById('note-content').value.trim();
+      if (!title) return;
+
+      const submitBtn = document.getElementById('btn-save-note');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Menyimpan...';
+
+      try {
+        const res = await fetch('/api/notes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, content })
+        });
+        const result = await res.json();
+        if (res.ok) {
+          document.getElementById('note-title').value = '';
+          document.getElementById('note-content').value = '';
+          await loadNotes();
+        } else {
+          alert('Gagal menyimpan: ' + (result.error || result.details || 'Error'));
+        }
+      } catch (err) {
+        alert('Koneksi gagal: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Simpan ke RDS MySQL';
+      }
+    }
+
+    async function reconnectDB() {
+      const btn = document.getElementById('btn-reconnect');
+      btn.textContent = 'Menghubungkan...';
+      btn.disabled = true;
+      try {
+        await fetch('/api/reconnect', { method: 'POST' });
+        await fetchStatus();
+        await loadNotes();
+      } finally {
+        btn.textContent = 'Cek Koneksi Ulang';
+        btn.disabled = false;
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Inisialisasi awal
+    fetchStatus();
+    loadNotes();
+    setInterval(fetchStatus, 10000);
+  </script>
+</body>
+</html>
